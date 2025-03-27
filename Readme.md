@@ -1,38 +1,101 @@
-# TCP Server-Client Example
 
-This project demonstrates a simple TCP server-client setup in Go.
+---
 
-## Purpose
 
-- Show how to listen for incoming TCP connections.
-- Establish a client connection to receive streamed data.
-- Illustrate how data is sent from the server and received by the client.
+# TCP Server-Client Example in Go
 
-## Project Structure
+> **A progressive journey into TCP networking with Go – from basics to bidirectional chat.**
 
-- `server/main.go`: Implements the server that accepts connections and sends data.
-- `client/main.go`: Implements the client that connects to the server and receives data.
-- `valueobject/constant.go`: Contains shared constants (like the server address).
+This repository is a hands-on learning journey into building TCP-based server-client systems using Go. It starts with the basics of TCP communication and progressively introduces more advanced concepts like bidirectional messaging, broadcasting, and client-to-client communication—all through clean, well-structured examples.
 
-## How to Use
+Each lesson lives in its own branch (`lesson-1`, `lesson-2`, etc.), so you can follow along step by step and deepen your understanding of real-time networking using raw sockets.
 
-### Prerequisites
-- Go 1.16 or later.
 
-### Running the Server
-1. Navigate to `server`:  
-   \`cd server\`
-2. Run:  
-   \`go run main.go\`
-3. The server will listen on the configured port and log connection events.
+## 📌 Purpose
 
-### Running the Client
-1. Open a new terminal and navigate to `client`:  
-   \`cd client\`
-2. Run:  
-   \`go run main.go\`
-3. The client will connect and display any data received from the server.
+- Learn how to listen for incoming TCP connections using Go.
+- Understand how clients establish a connection and communicate.
+- Practice building real-time applications over TCP.
+- Incrementally advance your knowledge through practical lessons.
 
-## Explanation
-- The server waits for clients to connect and periodically streams data.
-- Each client reads the incoming data and prints it to its console.
+---
+
+## 🗂️ Project Structure
+
+```
+.
+├── client/
+│   └── main.go              # Client implementation
+├── server/
+│   └── main.go              # Server implementation
+├── valueobject/
+│   └── constant.go          # Shared constants (e.g., address, port)
+```
+
+---
+
+## 🚀 Getting Started
+
+### ✅ Prerequisites
+
+- Go 1.16 or later  
+  Check with: `go version`
+
+### 🖥️ Running the Server
+
+```bash
+cd server
+go run main.go
+```
+
+- The server will start listening on the configured port.
+- It logs connection events and sends data to connected clients.
+
+### 🧑‍💻 Running the Client
+
+Open a **new terminal**:
+
+```bash
+cd client
+go run main.go
+```
+
+- The client connects to the server and displays any received data.
+
+---
+
+## 🧠 How It Works
+
+- The server continuously sends timestamped messages to each connected client.
+- The client connects via TCP and listens for the stream.
+- Demonstrates real-time, unidirectional or bidirectional communication over raw TCP.
+
+---
+
+## 🏗️ Lesson Roadmap
+
+| Lesson | Branch        | Description                                 |
+|--------|---------------|---------------------------------------------|
+| 1      | `lesson-1`    | Basic TCP streaming (server to client)      |
+| 2      | `lesson-2`    | Bidirectional server-client messaging       |
+| 3      | `lesson-3`    | Server broadcasts messages to all clients   |
+| 4      | `lesson-4`    | Client-to-client messaging via server       |
+| 5+     | Coming Soon   | Authentication, WebSocket migration, etc.   |
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
+
+---
+
+## 🙌 Contributions
+
+This project is meant for learning and growth. Feel free to fork it, improve it, or use it as a foundation for your own networking experiments. Pull requests are welcome!
+
+---
+
+## 🔖 Topics
+
+`golang` • `tcp` • `networking` • `socket-programming` • `client-server` • `real-time` • `learning` • `go-tutorial`
