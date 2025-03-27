@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/mansoorceksport/go-networking-lessons/valueobject"
 	"log/slog"
 	"net"
 	"os"
-	"tutorials/tcp/valueobject"
 )
 
 func main() {

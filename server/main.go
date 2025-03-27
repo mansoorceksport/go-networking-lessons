@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/mansoorceksport/go-networking-lessons/valueobject"
 	"log/slog"
 	"net"
 	"time"
-	"tutorials/tcp/valueobject"
 )
 
 func main() {
