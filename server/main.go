@@ -1,12 +1,19 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"github.com/mansoorceksport/go-networking-lessons/valueobject"
 	"log/slog"
 	"net"
-	"time"
+	"os"
+	"sync"
+)
+
+var (
+	clients   = make(map[net.Conn]bool)
+	clientsMu = &sync.Mutex{}
 )
 
 func main() {
@@ -19,6 +26,9 @@ func main() {
 
 	slog.InfoContext(ctx, "server is listening on :9000")
 
+	// Goroutine to handle sending messages from server terminal
+	go handleServerInputs()
+
 	for {
 		// accept the connection
 		conn, err := listener.Accept()
@@ -27,6 +37,10 @@ func main() {
 			continue
 		}
 
+		clientsMu.Lock()
+		clients[conn] = true
+		clientsMu.Unlock()
+
 		slog.InfoContext(ctx, "accepted new connection", slog.Any("IP", conn.RemoteAddr().String()))
 		go handleConnection(conn)
 	}
@@ -34,18 +48,50 @@ func main() {
 }
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
+	defer func() {
+		conn.Close()
+		clientsMu.Lock()
+		delete(clients, conn)
+		clientsMu.Unlock()
+		slog.Info("Client disconnected:", slog.Any("IP", conn.RemoteAddr().String()))
+	}()
 
-	for {
-		message := fmt.Sprintf("Streaming data: %v\n", time.Now().Format(time.RFC3339))
+	scanner := bufio.NewScanner(conn)
+	for scanner.Scan() {
+		message := scanner.Text()
+		fmt.Println("client: ", message)
+		fmt.Println("> ")
 
-		_, err := conn.Write([]byte(message))
-		if err != nil {
-			fmt.Println("Client disconnected:", conn.RemoteAddr())
-			return
-		}
-
-		time.Sleep(1 * time.Second)
 	}
 
+	if err := scanner.Err(); err != nil {
+		slog.ErrorContext(context.Background(), "error reading from client:", slog.Any("err", err))
+	}
+
+}
+
+func handleServerInputs() {
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		message := scanner.Text()
+		// Print a new prompt line after sending the message
+		fmt.Print("> ")
+
+		broadcastMessage(message)
+
+	}
+}
+
+func broadcastMessage(message string) {
+	clientsMu.Lock()
+	defer clientsMu.Unlock()
+
+	for client := range clients {
+		_, err := client.Write([]byte(message + "\n"))
+		if err != nil {
+			slog.Error("error writing to client:", slog.Any("err", err))
+			client.Close()
+			delete(clients, client) // remove the disconnected client
+		}
+	}
 }
