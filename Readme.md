@@ -1,22 +1,19 @@
 
+
+```markdown
+# Lesson 4: Client-to-Client Communication via Server
+
+This lesson demonstrates how clients can send messages to each other through a central TCP server. The server handles routing and forwarding messages between connected clients based on their unique IDs.
+
 ---
 
+## 🧠 What You'll Learn
 
-# TCP Server-Client Example in Go
-
-> **A progressive journey into TCP networking with Go – from basics to bidirectional chat.**
-
-This repository is a hands-on learning journey into building TCP-based server-client systems using Go. It starts with the basics of TCP communication and progressively introduces more advanced concepts like bidirectional messaging, broadcasting, and client-to-client communication—all through clean, well-structured examples.
-
-Each lesson lives in its own branch (`lesson-1`, `lesson-2`, etc.), so you can follow along step by step and deepen your understanding of real-time networking using raw sockets.
-
-
-## 📌 Purpose
-
-- Learn how to listen for incoming TCP connections using Go.
-- Understand how clients establish a connection and communicate.
-- Practice building real-time applications over TCP.
-- Incrementally advance your knowledge through practical lessons.
+- How to assign and use client IDs.
+- How to route messages from one client to another through the server.
+- Parsing message formats to determine the target recipient.
+- Managing multiple client connections with Go's concurrency model.
+```
 
 ---
 
@@ -25,77 +22,94 @@ Each lesson lives in its own branch (`lesson-1`, `lesson-2`, etc.), so you can f
 ```
 .
 ├── client/
-│   └── main.go              # Client implementation
+│   └── main.go              # Prompts for client ID and handles messaging
 ├── server/
-│   └── main.go              # Server implementation
+│   └── main.go              # Registers client IDs and forwards messages
 ├── valueobject/
-│   └── constant.go          # Shared constants (e.g., address, port)
+│   └── constant.go          # Shared constants (like server address)
 ```
+
+---
+
+## 🛠️ How It Works
+
+1. Each client is asked to enter a unique **Client ID** when connecting.
+2. The server stores all connected clients in memory.
+3. Clients can send messages using the format:
+
+```
+@recipient-id Your message here
+``` 
+
+4. The server reads the sender's message, finds the recipient, and forwards it.
 
 ---
 
 ## 🚀 Getting Started
 
-### ✅ Prerequisites
-
-- Go 1.16 or later  
-  Check with: `go version`
-
-### 🖥️ Running the Server
+### 1. Run the Server
 
 ```bash
 cd server
 go run main.go
 ```
 
-- The server will start listening on the configured port.
-- It logs connection events and sends data to connected clients.
+You’ll see logs when clients connect or disconnect.
 
-### 🧑‍💻 Running the Client
+---
 
-Open a **new terminal**:
+### 2. Run the Clients (in separate terminals)
 
 ```bash
 cd client
 go run main.go
 ```
 
-- The client connects to the server and displays any received data.
+You’ll be prompted to enter a **unique client ID**. After that, you can send messages in this format:
+
+```
+@client2 Hello, how are you?
+```
+
+If `client2` is connected, they will receive:
+
+```
+From client1: Hello, how are you?
+```
 
 ---
 
-## 🧠 How It Works
+## 📝 Example Interaction
 
-- The server continuously sends timestamped messages to each connected client.
-- The client connects via TCP and listens for the stream.
-- Demonstrates real-time, unidirectional or bidirectional communication over raw TCP.
+**Client 1 terminal:**
+```
+Enter your client ID: client1
+@client2 Hello from client1!
+```
 
----
-
-## 🏗️ Lesson Roadmap
-
-| Lesson | Branch        | Description                                 |
-|--------|---------------|---------------------------------------------|
-| 1      | `lesson-1`    | Basic TCP streaming (server to client)      |
-| 2      | `lesson-2`    | Bidirectional server-client messaging       |
-| 3      | `lesson-3`    | Server broadcasts messages to all clients   |
-| 4      | `lesson-4`    | Client-to-client messaging via server       |
-| 5+     | Coming Soon   | Authentication, WebSocket migration, etc.   |
+**Client 2 terminal:**
+```
+Enter your client ID: client2
+From client1: Hello from client1!
+```
 
 ---
 
-## 📄 License
+## 📌 Notes
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+- Clients must be connected and properly registered with unique IDs.
+- Messages that don’t match the `@recipient` format are ignored (or could be improved with validation).
+- You can enhance this lesson further by supporting:
+  - `@all` broadcasting
+  - Command parsing (e.g., `/list` to list online users)
+  - Authentication
 
 ---
 
-## 🙌 Contributions
+## 🏁 Next Steps
 
-This project is meant for learning and growth. Feel free to fork it, improve it, or use it as a foundation for your own networking experiments. Pull requests are welcome!
+This lesson sets the foundation for more advanced features like private/public channels, user lists, and real-time WebSocket-based communication.
+
+Check out the other lessons in the `go-networking-lessons` repo to continue learning.
 
 ---
-
-## 🔖 Topics
-
-`golang` • `tcp` • `networking` • `socket-programming` • `client-server` • `real-time` • `learning` • `go-tutorial`
