@@ -10,8 +10,11 @@ import (
 	"os"
 )
 
+var (
+	ctx = context.Background()
+)
+
 func main() {
-	ctx := context.Background()
 	conn, err := net.Dial("tcp", valueobject.ServerAddress)
 	if err != nil {
 		// error connecting to the server
@@ -20,41 +23,44 @@ func main() {
 	}
 	defer conn.Close()
 
-	slog.InfoContext(ctx, "Connected to streaming server...")
-	go handleInput(conn)
-
-	// handle incoming messages from the server
-	scanner := bufio.NewScanner(conn)
-	for scanner.Scan() {
-		fmt.Println("server: ", scanner.Text())
-		fmt.Print("> ")
+	// Read and print server messages (including asking for client ID)
+	incomingScanner := bufio.NewScanner(conn)
+	if incomingScanner.Scan() {
+		fmt.Println(incomingScanner.Text()) // Enter your client ID:
 	}
 
-	if err := scanner.Err(); err != nil {
-		slog.ErrorContext(ctx, "error reading from the server: %v", slog.Any("err", err.Error()))
-		os.Exit(1)
-	}
-
-}
-
-func handleInput(conn net.Conn) {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		message := scanner.Text()
-		_, err := conn.Write([]byte("client: " + message + "\n"))
+	// enter client ID
+	stdinScanner := bufio.NewScanner(os.Stdin)
+	if stdinScanner.Scan() {
+		clientId := stdinScanner.Text()
+		if clientId == "" {
+			slog.ErrorContext(ctx, "client ID cannot be empty")
+			return
+		}
+		_, err = conn.Write([]byte(clientId + "\n"))
 		if err != nil {
-			fmt.Println("Error sending message to server:", err)
+			slog.ErrorContext(ctx, "failed to send client ID: %v", slog.Any("err", err.Error()))
+			return
+		}
+	}
+
+	// Start a goroutine to handle incoming message
+	go func() {
+		for incomingScanner.Scan() {
+			fmt.Println(incomingScanner.Text())
+		}
+	}()
+
+	fmt.Println("Type your message in format '@recipient message' (e.g., '@client1 Hello!'):")
+
+	// send messages
+	for stdinScanner.Scan() {
+		message := stdinScanner.Text()
+		_, err = conn.Write([]byte(message + "\n"))
+		if err != nil {
+			slog.ErrorContext(ctx, "failed to send message: %v", slog.Any("err", err.Error()))
 			return
 		}
 
-		// Print a new prompt line after sending the message
-		fmt.Print("> ")
-
-		// exit if the message is "exit"
-		if message == "exit" {
-			fmt.Println("Exiting...")
-			os.Exit(0)
-			return
-		}
 	}
 }

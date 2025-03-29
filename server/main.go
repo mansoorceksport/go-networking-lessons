@@ -7,17 +7,17 @@ import (
 	"github.com/mansoorceksport/go-networking-lessons/valueobject"
 	"log/slog"
 	"net"
-	"os"
+	"strings"
 	"sync"
 )
 
 var (
-	clients   = make(map[net.Conn]bool)
+	clients   = make(map[string]net.Conn)
 	clientsMu = &sync.Mutex{}
+	ctx       = context.Background()
 )
 
 func main() {
-	ctx := context.Background()
 	listener, err := net.Listen("tcp", valueobject.ServerAddress)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to listen: %v", slog.Any("err", err))
@@ -25,10 +25,6 @@ func main() {
 	defer listener.Close()
 
 	slog.InfoContext(ctx, "server is listening on :9000")
-
-	// Goroutine to handle sending messages from server terminal
-	go handleServerInputs()
-	fmt.Print("> you: ")
 
 	for {
 		// accept the connection
@@ -38,30 +34,41 @@ func main() {
 			continue
 		}
 
-		clientsMu.Lock()
-		clients[conn] = true
-		clientsMu.Unlock()
-
 		slog.InfoContext(ctx, "accepted new connection", slog.Any("IP", conn.RemoteAddr().String()))
-		go handleConnection(conn)
+		go handleClient(conn)
 	}
 
 }
 
-func handleConnection(conn net.Conn) {
+func handleClient(conn net.Conn) {
 	defer func() {
 		conn.Close()
-		clientsMu.Lock()
-		delete(clients, conn)
-		clientsMu.Unlock()
 		slog.Info("Client disconnected:", slog.Any("IP", conn.RemoteAddr().String()))
 	}()
 
+	// request client id
+	conn.Write([]byte("Enter your client ID: " + "\n"))
 	scanner := bufio.NewScanner(conn)
+	if !scanner.Scan() {
+		return
+	}
+	clientId := strings.TrimSpace(scanner.Text())
+	if clientId == "" {
+		conn.Write([]byte("Invalid client ID. Disconnecting...\n"))
+		return
+	}
+
+	clientsMu.Lock()
+	clients[clientId] = conn
+	clientsMu.Unlock()
+
+	fmt.Println("client connected:", clientId)
+	conn.Write([]byte("Welcome " + clientId + "! You can start sending messages.\n"))
+
+	// Handle incoming messages
 	for scanner.Scan() {
 		message := scanner.Text()
-		fmt.Println(message)
-		fmt.Print("> ")
+		handleMessage(clientId, message)
 
 	}
 
@@ -69,33 +76,39 @@ func handleConnection(conn net.Conn) {
 		slog.ErrorContext(context.Background(), "error reading from client:", slog.Any("err", err))
 	}
 
-}
-
-func handleServerInputs() {
-	scanner := bufio.NewScanner(os.Stdin)
-	for scanner.Scan() {
-		message := scanner.Text()
-		if message == "" {
-			return
-		}
-		// Print a new prompt line after sending the message
-		fmt.Print("> ")
-
-		broadcastMessage(message)
-
-	}
-}
-
-func broadcastMessage(message string) {
+	// Cleanup on client disconnect
 	clientsMu.Lock()
-	defer clientsMu.Unlock()
+	delete(clients, clientId)
+	clientsMu.Unlock()
+	fmt.Println("Client disconnected:", clientId)
+}
 
-	for client := range clients {
-		_, err := client.Write([]byte(message + "\n"))
-		if err != nil {
-			slog.Error("error writing to client:", slog.Any("err", err))
-			client.Close()
-			delete(clients, client) // remove the disconnected client
-		}
+func handleMessage(senderId, message string) {
+	// Message format: @clientId message
+	// Example: @client1 Hello
+	if !strings.HasPrefix(message, "@") {
+		return
+	}
+	// Split the message into parts
+	parts := strings.SplitN(message[1:], " ", 2)
+	if len(parts) < 2 {
+		return
+	}
+	recipientId, message := parts[0], parts[1]
+	clientsMu.Lock()
+	recipientConn, ok := clients[recipientId]
+	clientsMu.Unlock()
+	if !ok {
+		fmt.Println("Client not found:", recipientId)
+		return
+	}
+
+	// Send the message to the recipient
+	_, err := recipientConn.Write([]byte(senderId + ": " + message + "\n"))
+	if err != nil {
+		fmt.Println("Error sending message to recipient:", err)
+		clientsMu.Lock()
+		delete(clients, recipientId) // remove the disconnected client
+		clientsMu.Unlock()
 	}
 }
