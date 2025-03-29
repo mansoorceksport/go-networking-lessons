@@ -41,7 +41,7 @@ func handleInput(conn net.Conn) {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		message := scanner.Text()
-		_, err := conn.Write([]byte(message + "\n"))
+		_, err := conn.Write([]byte("client: " + message + "\n"))
 		if err != nil {
 			fmt.Println("Error sending message to server:", err)
 			return

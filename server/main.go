@@ -28,6 +28,7 @@ func main() {
 
 	// Goroutine to handle sending messages from server terminal
 	go handleServerInputs()
+	fmt.Print("> you: ")
 
 	for {
 		// accept the connection
@@ -59,8 +60,8 @@ func handleConnection(conn net.Conn) {
 	scanner := bufio.NewScanner(conn)
 	for scanner.Scan() {
 		message := scanner.Text()
-		fmt.Println("client: ", message)
-		fmt.Println("> ")
+		fmt.Println(message)
+		fmt.Print("> ")
 
 	}
 
@@ -74,6 +75,9 @@ func handleServerInputs() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		message := scanner.Text()
+		if message == "" {
+			return
+		}
 		// Print a new prompt line after sending the message
 		fmt.Print("> ")
 
